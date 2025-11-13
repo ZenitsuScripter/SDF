@@ -26,20 +26,61 @@ local savedSettings = {
 
 -- ETAPA 1: Reduzir qualidade gráfica
 local function optimizeGraphicsQuality()
-	print("⚡ [1/5] Otimizando qualidade gráfica...")
+	print("⚡ [1/6] Otimizando qualidade gráfica...")
 	
+	-- Configurar qualidade de renderização
 	pcall(function()
 		local renderSettings = settings().Rendering
 		savedSettings.QualityLevel = renderSettings.QualityLevel
 		renderSettings.QualityLevel = Enum.QualityLevel.Level01
+		renderSettings.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
+	end)
+	
+	-- Desabilitar recursos pesados no UserSettings
+	pcall(function()
+		UserSettings():GetService("UserGameSettings").SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
 	end)
 	
 	task.wait(2)
 end
 
--- ETAPA 2: Desabilitar efeitos visuais pesados GRADUALMENTE
-local function disableHeavyEffects()
-	print("⚡ [2/5] Desabilitando efeitos visuais pesados...")
+-- ETAPA 2: Otimizar texturas e materiais (GRANDE IMPACTO)
+local function optimizeTextures()
+	print("⚡ [2/6] Otimizando texturas e materiais...")
+	
+	task.spawn(function()
+		local descendants = Workspace:GetDescendants()
+		local batchSize = 100
+		
+		for i = 1, #descendants, batchSize do
+			for j = i, math.min(i + batchSize - 1, #descendants) do
+				local obj = descendants[j]
+				pcall(function()
+					-- Remover texturas pesadas
+					if obj:IsA("Decal") or obj:IsA("Texture") then
+						obj.Transparency = 1 -- Torna invisível mas mantém o objeto
+					elseif obj:IsA("SurfaceAppearance") then
+						obj.TexturePack = "" -- Remove texturas PBR
+					-- Simplificar materiais de partes
+					elseif obj:IsA("MeshPart") then
+						obj.Material = Enum.Material.SmoothPlastic
+						obj.TextureID = ""
+					elseif obj:IsA("Part") or obj:IsA("UnionOperation") then
+						if obj.Material ~= Enum.Material.ForceField then
+							obj.Material = Enum.Material.SmoothPlastic
+						end
+					end
+				end)
+			end
+			task.wait(0.03)
+		end
+		print("  ✓ Texturas otimizadas")
+	end)
+	
+	task.wait(2)
+end
+-- ETAPA 3: Desabilitar efeitos visuais pesados GRADUALMENTE
+	print("⚡ [3/6] Desabilitando efeitos visuais pesados...")
 	
 	-- Desabilitar efeitos um por um com delay
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect")
@@ -75,9 +116,9 @@ local function disableHeavyEffects()
 	task.wait(1)
 end
 
--- ETAPA 3: Otimizar atmosfera e nuvens SUAVEMENTE
+-- ETAPA 4: Otimizar atmosfera e nuvens SUAVEMENTE
 local function optimizeAtmosphere()
-	print("⚡ [3/5] Otimizando atmosfera...")
+	print("⚡ [4/6] Otimizando atmosfera...")
 	
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
 	if atmosphere then
@@ -110,12 +151,25 @@ local function optimizeAtmosphere()
 		clouds.Enabled = false
 	end
 	
+	-- Monitorar e manter atmosfera otimizada (caso o jogo tente recriar)
+	Lighting.ChildAdded:Connect(function(child)
+		task.wait(0.1)
+		if child:IsA("Atmosphere") then
+			child.Density = 0.1
+			child.Offset = 0
+			child.Glare = 0
+			child.Haze = 0
+		elseif child:IsA("Clouds") then
+			child.Enabled = false
+		end
+	end)
+	
 	task.wait(1)
 end
 
--- ETAPA 4: Otimizar partículas em background (SEM TRAVAR)
+-- ETAPA 5: Otimizar partículas em background (SEM TRAVAR)
 local function optimizeParticles()
-	print("⚡ [4/5] Otimizando partículas...")
+	print("⚡ [5/6] Otimizando partículas...")
 	
 	task.spawn(function()
 		local descendants = Workspace:GetDescendants()
@@ -168,9 +222,9 @@ local function optimizeParticles()
 	task.wait(2)
 end
 
--- ETAPA 5: Otimizações finais SUAVES
+-- ETAPA 6: Otimizações finais SUAVES
 local function finalOptimizations()
-	print("⚡ [5/5] Aplicando otimizações finais...")
+	print("⚡ [6/6] Aplicando otimizações finais...")
 	
 	-- Desabilitar sombras
 	Lighting.GlobalShadows = false
@@ -242,6 +296,7 @@ local function startOptimization()
 	
 	-- Executar todas as etapas com delays maiores
 	optimizeGraphicsQuality()
+	optimizeTextures()
 	disableHeavyEffects()
 	optimizeAtmosphere()
 	optimizeParticles()
