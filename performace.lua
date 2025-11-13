@@ -1,10 +1,5 @@
--- Performance Boost Script - Otimização Suave sem Micro Lags
--- Aplica mudanças gradualmente para evitar travamentos
-
-local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
-local Players = game:GetService("Players")
+-- Performance Boost Script - Otimização Completa
+-- Carrega automaticamente e otimiza o jogo
 
 -- Prevenir execução múltipla
 if _G.PerformanceBoostActive then 
@@ -13,9 +8,15 @@ if _G.PerformanceBoostActive then
 end
 _G.PerformanceBoostActive = true
 
-print("🚀 Performance Boost - Iniciando otimização suave...")
+print("🚀 Performance Boost - Iniciando...")
 
--- Salvar configurações
+-- Services
+local RunService = game:GetService("RunService")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local Players = game:GetService("Players")
+
+-- Salvar configurações originais
 local savedSettings = {
 	QualityLevel = nil,
 	GlobalShadows = Lighting.GlobalShadows,
@@ -24,11 +25,10 @@ local savedSettings = {
 	WaterSettings = {}
 }
 
--- ETAPA 1: Reduzir qualidade gráfica
-local function optimizeGraphicsQuality()
+-- ETAPA 1: Qualidade gráfica
+local function step1_GraphicsQuality()
 	print("⚡ [1/6] Otimizando qualidade gráfica...")
 	
-	-- Configurar qualidade de renderização
 	pcall(function()
 		local renderSettings = settings().Rendering
 		savedSettings.QualityLevel = renderSettings.QualityLevel
@@ -36,7 +36,6 @@ local function optimizeGraphicsQuality()
 		renderSettings.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
 	end)
 	
-	-- Desabilitar recursos pesados no UserSettings
 	pcall(function()
 		UserSettings():GetService("UserGameSettings").SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
 	end)
@@ -44,9 +43,9 @@ local function optimizeGraphicsQuality()
 	task.wait(2)
 end
 
--- ETAPA 2: Otimizar texturas e materiais (GRANDE IMPACTO)
-local function optimizeTextures()
-	print("⚡ [2/6] Otimizando texturas e materiais...")
+-- ETAPA 2: Texturas e materiais
+local function step2_OptimizeTextures()
+	print("⚡ [2/6] Otimizando texturas...")
 	
 	task.spawn(function()
 		local descendants = Workspace:GetDescendants()
@@ -56,12 +55,10 @@ local function optimizeTextures()
 			for j = i, math.min(i + batchSize - 1, #descendants) do
 				local obj = descendants[j]
 				pcall(function()
-					-- Remover texturas pesadas
 					if obj:IsA("Decal") or obj:IsA("Texture") then
-						obj.Transparency = 1 -- Torna invisível mas mantém o objeto
+						obj.Transparency = 1
 					elseif obj:IsA("SurfaceAppearance") then
-						obj.TexturePack = "" -- Remove texturas PBR
-					-- Simplificar materiais de partes
+						obj.TexturePack = ""
 					elseif obj:IsA("MeshPart") then
 						obj.Material = Enum.Material.SmoothPlastic
 						obj.TextureID = ""
@@ -79,10 +76,11 @@ local function optimizeTextures()
 	
 	task.wait(2)
 end
--- ETAPA 3: Desabilitar efeitos visuais pesados GRADUALMENTE
-	print("⚡ [3/6] Desabilitando efeitos visuais pesados...")
+
+-- ETAPA 3: Efeitos visuais pesados
+local function step3_DisableEffects()
+	print("⚡ [3/6] Desabilitando efeitos...")
 	
-	-- Desabilitar efeitos um por um com delay
 	local bloom = Lighting:FindFirstChildOfClass("BloomEffect")
 	if bloom then 
 		bloom.Enabled = false
@@ -116,13 +114,12 @@ end
 	task.wait(1)
 end
 
--- ETAPA 4: Otimizar atmosfera e nuvens SUAVEMENTE
-local function optimizeAtmosphere()
+-- ETAPA 4: Atmosfera
+local function step4_OptimizeAtmosphere()
 	print("⚡ [4/6] Otimizando atmosfera...")
 	
 	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
 	if atmosphere then
-		-- Salvar valores originais
 		savedSettings.Atmosphere = {
 			Density = atmosphere.Density,
 			Offset = atmosphere.Offset,
@@ -130,7 +127,6 @@ local function optimizeAtmosphere()
 			Haze = atmosphere.Haze
 		}
 		
-		-- Reduzir GRADUALMENTE (sem fazer desaparecer de uma vez)
 		local steps = 10
 		local targetDensity = math.min(atmosphere.Density * 0.2, 0.1)
 		local densityStep = (atmosphere.Density - targetDensity) / steps
@@ -151,7 +147,6 @@ local function optimizeAtmosphere()
 		clouds.Enabled = false
 	end
 	
-	-- Monitorar e manter atmosfera otimizada (caso o jogo tente recriar)
 	Lighting.ChildAdded:Connect(function(child)
 		task.wait(0.1)
 		if child:IsA("Atmosphere") then
@@ -167,20 +162,19 @@ local function optimizeAtmosphere()
 	task.wait(1)
 end
 
--- ETAPA 5: Otimizar partículas em background (SEM TRAVAR)
-local function optimizeParticles()
+-- ETAPA 5: Partículas
+local function step5_OptimizeParticles()
 	print("⚡ [5/6] Otimizando partículas...")
 	
 	task.spawn(function()
 		local descendants = Workspace:GetDescendants()
-		local batchSize = 50 -- Lotes menores para não travar
+		local batchSize = 50
 		local total = #descendants
 		
 		for i = 1, total, batchSize do
 			for j = i, math.min(i + batchSize - 1, total) do
 				local obj = descendants[j]
 				pcall(function()
-					-- Reduz 80% das partículas
 					if obj:IsA("ParticleEmitter") then
 						if obj.Enabled and obj.Rate > 0 then
 							obj.Rate = math.max(obj.Rate * 0.2, 1)
@@ -189,7 +183,6 @@ local function optimizeParticles()
 						if obj.Enabled then
 							obj.Lifetime = math.max(obj.Lifetime * 0.2, 0.1)
 						end
-					-- Desabilita efeitos legados pesados
 					elseif obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
 						if obj.Enabled then
 							obj.Enabled = false
@@ -197,15 +190,11 @@ local function optimizeParticles()
 					end
 				end)
 			end
-			
-			-- Delay entre lotes para não travar
 			task.wait(0.05)
 		end
-		
 		print("  ✓ Partículas otimizadas")
 	end)
 	
-	-- Otimizar novos objetos automaticamente
 	Workspace.DescendantAdded:Connect(function(obj)
 		task.wait(0.1)
 		pcall(function()
@@ -222,15 +211,13 @@ local function optimizeParticles()
 	task.wait(2)
 end
 
--- ETAPA 6: Otimizações finais SUAVES
-local function finalOptimizations()
-	print("⚡ [6/6] Aplicando otimizações finais...")
+-- ETAPA 6: Otimizações finais
+local function step6_FinalOptimizations()
+	print("⚡ [6/6] Otimizações finais...")
 	
-	-- Desabilitar sombras
 	Lighting.GlobalShadows = false
 	task.wait(0.5)
 	
-	-- Otimizar água gradualmente
 	if Workspace.Terrain then
 		savedSettings.WaterSettings = {
 			Reflectance = Workspace.Terrain.WaterReflectance,
@@ -238,7 +225,6 @@ local function finalOptimizations()
 			WaveSpeed = Workspace.Terrain.WaterWaveSpeed
 		}
 		
-		-- Reduzir gradualmente para não dar lag
 		for i = 1, 10 do
 			Workspace.Terrain.WaterReflectance = Workspace.Terrain.WaterReflectance * 0.7
 			Workspace.Terrain.WaterWaveSize = Workspace.Terrain.WaterWaveSize * 0.7
@@ -253,7 +239,6 @@ local function finalOptimizations()
 	
 	task.wait(0.5)
 	
-	-- Otimizar personagens em background
 	task.spawn(function()
 		for _, player in pairs(Players:GetPlayers()) do
 			if player ~= Players.LocalPlayer and player.Character then
@@ -267,11 +252,10 @@ local function finalOptimizations()
 					end
 				end)
 			end
-			task.wait(0.2) -- Delay entre players
+			task.wait(0.2)
 		end
 	end)
 	
-	-- Otimizar novos players
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(character)
 			task.wait(1)
@@ -290,24 +274,22 @@ local function finalOptimizations()
 	task.wait(1)
 end
 
--- Função principal de otimização
+-- Executar otimização
 local function startOptimization()
 	local startTime = tick()
 	
-	-- Executar todas as etapas com delays maiores
-	optimizeGraphicsQuality()
-	optimizeTextures()
-	disableHeavyEffects()
-	optimizeAtmosphere()
-	optimizeParticles()
-	finalOptimizations()
+	step1_GraphicsQuality()
+	step2_OptimizeTextures()
+	step3_DisableEffects()
+	step4_OptimizeAtmosphere()
+	step5_OptimizeParticles()
+	step6_FinalOptimizations()
 	
 	local elapsedTime = math.floor(tick() - startTime)
 	
-	print("✅ Performance Boost ativado com sucesso!")
-	print(string.format("⏱️ Tempo de otimização: %ds", elapsedTime))
-	print("🎮 Otimização completa! FPS deve estar melhor agora.")
+	print("✅ Performance Boost ativado!")
+	print(string.format("⏱️ Tempo: %ds", elapsedTime))
+	print("🎮 FPS melhorado!")
 end
 
--- Iniciar otimização automaticamente
 task.spawn(startOptimization)
